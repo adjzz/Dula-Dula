@@ -7,7 +7,6 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: black;
       touch-action: none; 
     }
 
@@ -34,6 +33,30 @@
       font-size: 18px;
       z-index: 10;
     }
+    #gameOverOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      backdrop-filter: blur(5px); 
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 30px;
+      text-align: center;
+      z-index: 10;
+      pointer-events: none; 
+    }
+    #gameOverOverlay button {
+      margin-top: 20px;
+      padding: 12px 25px;
+      font-size: 18px;
+      pointer-events: auto;
+    }
   </style>
 </head>
 <body>
@@ -46,10 +69,16 @@
   <button id="fireBtn" style="width:80px; height:80px; margin-right:10px;">⚡</button>
 </div> -->
 
-  
+<div id="gameOverOverlay" style="display:none;">
+  <div id="gameOverText">GAME OVER</div>
+  <div id="finalScore" style="font-size:20px; margin-top:10px;"></div>
+  <button id="restartBtnOverlay">Restart</button>
+</div>
+
 <button id="restartBtn" style="display:none; position: absolute; left:50%; top:60%; transform: translateX(-50%); padding:10px 20px; font-size:16px;">
   Restart
 </button>
+
 <canvas id="gameCanvas"></canvas>
 <script>
 const canvas = document.getElementById('gameCanvas');
@@ -87,7 +116,6 @@ let score = 0;
 let playerHealth = 100;  
 let gameOver = false; 
 
-
 let powerUp = null;
 let electricityUp = null;
 let electricityActive = false;
@@ -97,14 +125,12 @@ let missiles = [];
 let missileAmmo = 0;
 let missileDuration = 60000; 
 
-
 let upPressed = false;
 let downPressed = false;
 let firePressed = false;
 let bulletCooldown = 0; 
 const bulletDelay = 10;
 let energyBursts = [];
-
 
 document.addEventListener('keydown', (e) => {
   if(e.key === 'ArrowUp') upPressed = true;
@@ -117,7 +143,6 @@ document.addEventListener('keyup', (e) => {
   if(e.key === 'ArrowDown') downPressed = false;
   if(e.key === ' ') firePressed = false;
  });
-
 
 function spawnEnemy() {
   enemies.push({ 
@@ -464,15 +489,13 @@ function draw() {
   ctx.restore();
 }
 
+const gameOverOverlay = document.getElementById('gameOverOverlay');
+const restartBtnOverlay = document.getElementById('restartBtnOverlay');
+const finalScoreText = document.getElementById('finalScore');
+
 function drawGameOver() {
-  ctx.clearRect(0,0,400,400);
-  ctx.fillStyle = 'white';
-  ctx.font = '30px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2);
-  ctx.font = '20px Arial';
-  ctx.fillText('Score: ' + score, canvas.width/2, canvas.height/2 + 40);
-  restartBtn.style.display = 'block';
+  gameOverOverlay.style.display = 'flex';
+  finalScoreText.textContent = 'Score: ' + score;
 }
 
 
@@ -484,12 +507,14 @@ function loop() {
 loop();
 
 const restartBtn = document.getElementById('restartBtn');
-restartBtn.addEventListener('click', () => {
+restartBtnOverlay.addEventListener('click', () => {
   player.x = 50; player.y = 180; bullets = []; enemies = []; enemyBullets = [];
   explosions = []; score = 0; playerHealth = 100; gameOver = false;
   powerUp = null; electricityUp = null; electricityActive = false;
   missilesActive = false; missiles = []; missileAmmo = 0;
-  restartBtn.style.display = 'none';
+
+  gameOverOverlay.style.display = 'none';
+
   loop();
 });
 
