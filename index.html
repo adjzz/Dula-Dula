@@ -92,18 +92,26 @@ let electricityFrames = 0;
 let missilesActive = false;
 let missiles = [];
 let missileAmmo = 0;
-let missileDuration = 50000; 
+let missileDuration = 60000; 
 
 
 let upPressed = false;
 let downPressed = false;
 let firePressed = false;
+let bulletCooldown = 0; 
+const bulletDelay = 10;
 
 
 document.addEventListener('keydown', (e) => {
-  if(e.key === 'ArrowUp') player.y -= 20;
-  if(e.key === 'ArrowDown') player.y += 20;
-  if(e.key === ' ') bullets.push({ x: player.x + player.width, y: player.y + player.height/2, width:5, height:2 });
+  if(e.key === 'ArrowUp') upPressed = true;
+  if(e.key === 'ArrowDown') downPressed = true;
+  if(e.key === ' ') firePressed = true;
+});
+
+document.addEventListener('keyup', (e) => {
+  if(e.key === 'ArrowUp') upPressed = false;
+  if(e.key === 'ArrowDown') downPressed = false;
+  if(e.key === ' ') firePressed = false;
 });
 
 
@@ -133,10 +141,30 @@ function spawnPowerUps() {
 
 
 function update() {
+  let lastMissileTime = 0;
+  const missileInterval = 200; 
+
+  if(upPressed) player.y -= 5;     
+  if(downPressed) player.y += 5;
+
+  player.y = Math.max(0, Math.min(baseHeight - player.height, player.y));
+
+  if (firePressed && bulletCooldown <= 0) {
+      bullets.push({
+          x: player.x + player.width,
+          y: player.y + player.height / 2,
+          width: 5,
+          height: 2
+      });
+      bulletCooldown = bulletDelay; 
+  }
+
+  if (bulletCooldown > 0) bulletCooldown--;
+
   spawnPowerUps();
 
 
-  bullets.forEach(b => b.x += 10);
+  bullets.forEach(b => b.x += 30);
 
   enemies.forEach(e => {
     if(e.slowTimer > 0){
@@ -170,37 +198,47 @@ function update() {
   });
 
 
-  if(powerUp){
-    bullets.forEach((b, bi) => {
-      if(b.x < powerUp.x + powerUp.width && b.x + b.width > powerUp.x &&
-         b.y < powerUp.y + powerUp.height && b.y + b.height > powerUp.y) {
-           bullets.splice(bi,1);
-           missilesActive = true;
-           missileAmmo = 50;
-           powerUp = null;
-           setTimeout(() => missilesActive = false, missileDuration);
-           score++;
-      }
-    });
-  }
+    if (powerUp) {
+      for (let bi = bullets.length - 1; bi >= 0; bi--) { 
+        let b = bullets[bi];
+        if (b.x < powerUp.x + powerUp.width &&
+            b.x + b.width > powerUp.x &&
+            b.y < powerUp.y + powerUp.height &&
+            b.y + b.height > powerUp.y) {
 
-    if(electricityUp){
-    bullets.forEach((b, bi) => {
-        if(b.x < electricityUp.x + electricityUp.width && b.x + b.width > electricityUp.x &&
-        b.y < electricityUp.y + electricityUp.height && b.y + b.height > electricityUp.y) {
-            bullets.splice(bi,1);
-            electricityActive = true;
-            electricityFrames = 30000; 
-            electricityUp = null;
-            score++; 
+          bullets.splice(bi, 1);
+          missilesActive = true;
+          missileAmmo = 50;
+          powerUp = null;          
+          setTimeout(() => missilesActive = false, missileDuration);
+          score++;
+
+          break; 
         }
-    });
+      }
     }
 
+    if (electricityUp) {
+      for (let bi = bullets.length - 1; bi >= 0; bi--) {
+        let b = bullets[bi];
+        if (b.x < electricityUp.x + electricityUp.width &&
+            b.x + b.width > electricityUp.x &&
+            b.y < electricityUp.y + electricityUp.height &&
+            b.y + b.height > electricityUp.y) {
+
+          bullets.splice(bi, 1);
+          electricityActive = true;
+          electricityFrames = 30000;
+          electricityUp = null; 
+          score++;
+          break; 
+        }
+      }
+    }
 
     if (electricityActive) {
-
-      enemies.forEach((enemy, index) => {
+      enemies = enemies.filter(enemy => {
+        if(!enemy) return false; 
 
         let startX = player.x + player.width / 2;
         let startY = player.y + player.height / 2;
@@ -208,28 +246,28 @@ function update() {
         let endX = enemy.x + enemy.width / 2;
         let endY = enemy.y + enemy.height / 2;
 
-
         let dx = endX - startX;
         let dy = endY - startY;
         let distance = Math.sqrt(dx * dx + dy * dy);
- 
- 
-        if (distance <  500) {  
-          enemy.hp -= 0.1;   
+
+        if (distance < 500) {
+          enemy.hp -= 0.1;
           enemy.slowed = true;
-          enemy.speed = 0.2;   
+          enemy.speed = 0.2;
           enemy.slowTimer = 10;
 
           if(Math.random() < 0.2){
             explosions.push({ x: enemy.x, y: enemy.y, size: 5, alpha: 1 });
           }
-
-          if(enemy.hp <= 0){
-            explosions.push({ x: enemy.x, y: enemy.y, size: 20, alpha: 1 });
-            enemies.splice(index, 1);
-            score++;
-          }
         }
+
+        if(enemy.hp <= 0){
+          explosions.push({ x: enemy.x, y: enemy.y, size: 20, alpha: 1 });
+          score++;
+          return false; 
+        }
+
+        return true; 
       });
 
       electricityFrames--;
@@ -237,45 +275,53 @@ function update() {
     }
 
 
-  if(missilesActive && enemies.length > 0 && missileAmmo > 0) {
-    if(Math.random() < 0.05) {
-      let target = enemies[Math.floor(Math.random()*enemies.length)];
-      missiles.push({
-        x: player.x + player.width,
-        y: player.y + player.height/2,
-        width: 20,
-        height: 10,
-        target
-      });
-      missileAmmo--;
+    if (missilesActive && missileAmmo > 0) {
+
+      const availableTargets = enemies.filter(e => !missiles.some(m => m.target === e));
+
+      if (availableTargets.length > 0) {
+        const target = availableTargets[0]; 
+        missiles.push({
+          x: player.x + player.width,
+          y: player.y + player.height / 2,
+          width: 20,
+          height: 10,
+          target
+        });
+        missileAmmo--;
+      }
     }
-  }
 
 
-  missiles.forEach((m, mi) => {
-    if(m.target){
+    missiles = missiles.filter(m => {
+
+      if (!m.target || !enemies.includes(m.target)) return false;
+
       let dx = m.target.x - m.x;
       let dy = m.target.y - m.y;
-      let dist = Math.sqrt(dx*dx + dy*dy);
-      let speed = 5;
+      let dist = Math.sqrt(dx * dx + dy * dy);
+      let speed = 6;
       m.x += speed * dx / dist;
       m.y += speed * dy / dist;
 
-      if(m.x < m.target.x + m.target.width && m.x + m.width > m.target.x &&
-        m.y < m.target.y + m.target.height && m.y + m.height > m.target.y) {
-          explosions.push({ x: m.target.x, y: m.target.y, size: 10, alpha: 1 });
+      if (
+        m.x < m.target.x + m.target.width &&
+        m.x + m.width > m.target.x &&
+        m.y < m.target.y + m.target.height &&
+        m.y + m.height > m.target.y
+      ) {
+        explosions.push({ x: m.target.x, y: m.target.y, size: 10, alpha: 1 });
+        m.target.hp -= 20;
+        if (m.target.hp <= 0) {
+          enemies = enemies.filter(e => e !== m.target);
+          score++;
+        }
 
-          m.target.hp -= 20; 
-          if(m.target.hp <= 0){
-            enemies = enemies.filter(e => e !== m.target);
-            score++;
-          }
-
-          missiles.splice(mi,1);
+        return false; 
       }
-    }
-  });
 
+      return true; 
+    });
 
   bullets = bullets.filter(b => b.x < baseWidth);
   enemies = enemies.filter(e => e.x > -20);
@@ -302,6 +348,11 @@ function update() {
     }
   });
 
+  explosions = explosions.map(ex => {
+    ex.size += 2;
+    ex.alpha -= 0.05;
+    return ex;
+  }).filter(ex => ex.alpha > 0);
 
   // if(electricityFrames > 0) electricityFrames--;
   // else electricityActive = false;
