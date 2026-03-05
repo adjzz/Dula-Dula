@@ -59,24 +59,46 @@
     }
     #mobileControls {
       position: absolute;
-      bottom: 20px;
+      bottom: 50px; 
       width: 100%;
       display: flex;
-      justify-content: space-between;
-      pointer-events: none; /* allow only buttons to interact */
-      padding: 0 20px;
+      justify-content: center; 
+      align-items: flex-end;
+      pointer-events: none;
       z-index: 5;
+      gap: 400px; 
+    }
+
+    #mobileControls > div, #mobileControls > button {
+      pointer-events: auto;
+    }
+
+    #arrowButtons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
     }
 
     #mobileControls button {
-      width: 60px;
-      height: 60px;
-      font-size: 24px;
-      border-radius: 10px;
-      pointer-events: auto;
-      opacity: 0.6;
+      font-size: 28px;
+      border-radius: 15px;
+      opacity: 0.6; 
       background-color: black;
       color: white;
+      border: 2px solid white;
+      text-align: center;
+      touch-action: none;
+    }
+
+    #upBtnMobile, #downBtnMobile {
+      width: 100px;
+      height: 100px;
+    }
+
+    #fireBtnMobile {
+      width: 120px;
+      height: 120px;
     }
   </style>
 </head>
@@ -103,8 +125,10 @@
 <canvas id="gameCanvas"></canvas>
 
 <div id="mobileControls">
-  <button id="upBtnMobile">▲</button>
-  <button id="downBtnMobile">▼</button>
+  <div id="arrowButtons">
+    <button id="upBtnMobile">▲</button>
+    <button id="downBtnMobile">▼</button>
+  </div>
   <button id="fireBtnMobile">⚡</button>
 </div>
 
