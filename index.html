@@ -57,6 +57,27 @@
       font-size: 18px;
       pointer-events: auto;
     }
+    #mobileControls {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none; /* allow only buttons to interact */
+      padding: 0 20px;
+      z-index: 5;
+    }
+
+    #mobileControls button {
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+      border-radius: 10px;
+      pointer-events: auto;
+      opacity: 0.6;
+      background-color: black;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -80,6 +101,13 @@
 </button>
 
 <canvas id="gameCanvas"></canvas>
+
+<div id="mobileControls">
+  <button id="upBtnMobile">▲</button>
+  <button id="downBtnMobile">▼</button>
+  <button id="fireBtnMobile">⚡</button>
+</div>
+
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -518,6 +546,25 @@ restartBtnOverlay.addEventListener('click', () => {
   loop();
 });
 
+const upBtnMobile = document.getElementById('upBtnMobile');
+const downBtnMobile = document.getElementById('downBtnMobile');
+const fireBtnMobile = document.getElementById('fireBtnMobile');
+
+function addTouchControls(button, onPress, onRelease) {
+  button.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    onPress();
+  }, { passive: false });
+
+  button.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    onRelease();
+  });
+}
+
+addTouchControls(upBtnMobile, () => upPressed = true, () => upPressed = false);
+addTouchControls(downBtnMobile, () => downPressed = true, () => downPressed = false);
+addTouchControls(fireBtnMobile, () => firePressed = true, () => firePressed = false);
 </script>
 </body>
 </html>
