@@ -66,6 +66,9 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
+const bgImage = new Image();
+bgImage.src = "space.png"; 
+let bgY = 0; 
 const playerImage = new Image();
 playerImage.src = "alien_Fire2.png"; 
 const enemyImage = new Image();
@@ -385,12 +388,21 @@ function update() {
 }
 
 
+let bgX = 0;
+
 function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   let scaleX = canvas.width / baseWidth;
   let scaleY = canvas.height / baseHeight;
   ctx.save();
   ctx.scale(scaleX, scaleY);
+
+  ctx.drawImage(bgImage, bgX, 0, baseWidth, baseHeight);
+  ctx.drawImage(bgImage, bgX + baseWidth, 0, baseWidth, baseHeight);
+
+  bgX -= 1; 
+  if (bgX <= -baseWidth) bgX = 0; 
 
   ctx.fillStyle = 'red'; ctx.fillRect(10,30,100,10);
   ctx.fillStyle = 'lime'; ctx.fillRect(10,30,playerHealth,10);
@@ -401,7 +413,6 @@ function draw() {
 
   ctx.fillStyle = 'yellow';
   bullets.forEach(b => ctx.fillRect(b.x,b.y,b.width,b.height));
-
 
   enemies.forEach(e => {
     ctx.drawImage(enemyImage, e.x, e.y, e.width, e.height);
@@ -416,37 +427,16 @@ function draw() {
 
 
   if(powerUp) ctx.drawImage(powerUpImage, powerUp.x, powerUp.y, powerUp.width, powerUp.height);
-
-  if (electricityUp) {
-    ctx.shadowBlur = 0;
-    ctx.drawImage(
-      powerUpImage,
-      electricityUp.x,
-      electricityUp.y,
-      electricityUp.width,
-      electricityUp.height
-    );
-
-    ctx.strokeStyle = 'cyan';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(electricityUp.x, electricityUp.y);
-    ctx.stroke();
-    ctx.shadowColor = "cyan";
-    ctx.shadowBlur = 15;   
-
-  }
+  if(electricityUp) ctx.drawImage(powerUpImage, electricityUp.x, electricityUp.y, electricityUp.width, electricityUp.height);
 
 
   missiles.forEach(m => ctx.drawImage(missileImage, m.x, m.y, m.width, m.height));
-
   explosions.forEach(ex => {
     ctx.beginPath();
     ctx.arc(ex.x + 10, ex.y + 10, ex.size, 0, Math.PI*2);
     ctx.fillStyle = `rgba(255, 100, 0, ${ex.alpha})`;
     ctx.fill();
   });
-
 
   if(electricityActive){
     ctx.strokeStyle = 'cyan';
@@ -473,7 +463,6 @@ function draw() {
 
   ctx.restore();
 }
-
 
 function drawGameOver() {
   ctx.clearRect(0,0,400,400);
