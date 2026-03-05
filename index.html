@@ -133,6 +133,12 @@
 </div>
 
 <script>
+const shootSound = new Audio('gunFire.mp3');
+const explosionSound = new Audio('explosion.mp3');
+const powerupSound = new Audio('powerUP.mp3');
+const electricitySound = new Audio('electric.mp3');
+const missileSound = new Audio('missiles.mp3');
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -252,6 +258,7 @@ function update() {
           height: 2
       });
       bulletCooldown = bulletDelay; 
+      shootSound.play(); 
   }
 
   if (bulletCooldown > 0) bulletCooldown--;
@@ -286,6 +293,7 @@ function update() {
 
           if(e.hp <= 0){
             enemies.splice(ei,1);
+            explosionSound.play();
             score++;
           }
       }
@@ -309,7 +317,8 @@ function update() {
           bullets.splice(bi, 1);
           missilesActive = true;
           missileAmmo = 50;
-          powerUp = null;          
+          powerUp = null;  
+          powerupSound.play();        
           setTimeout(() => missilesActive = false, missileDuration);
           score++;
           break; 
@@ -335,6 +344,7 @@ function update() {
           electricityActive = true;
           electricityFrames = 30000;
           electricityUp = null; 
+          powerupSound.play();
           score++;
           break; 
         }
@@ -369,6 +379,7 @@ function update() {
 
         if (enemy.hp <= 0) {
           explosions.push({ x: enemy.x, y: enemy.y, size: 20, alpha: 1 });
+          explosionSound.play();
           score++;
           return false;
         }
@@ -395,6 +406,7 @@ function update() {
           target
         });
         missileAmmo--;
+        missileSound.play();
       }
     }
 
@@ -420,6 +432,7 @@ function update() {
         m.target.hp -= 20;
         if (m.target.hp <= 0) {
           enemies = enemies.filter(e => e !== m.target);
+          explosionSound.play();
           score++;
         }
 
