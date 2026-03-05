@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Space Impact Clone with Power-Ups</title>
+  <style>
+    canvas { background: black; display: block; margin: 0 auto; }
+  </style>
+</head>
+<body>
+<button id="restartBtn" style="display:none; position: absolute; left:50%; top:60%; transform: translateX(-50%); padding:10px 20px; font-size:16px;">
+  Restart
+</button>
+<canvas id="gameCanvas" width="400" height="400"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const playerImage = new Image();
+playerImage.src = "alien_Fire2.png"; 
+const enemyImage = new Image();
+enemyImage.src = "enemy.png";
+const missileImage = new Image();
+missileImage.src = "missile2.png";
+const powerUpImage = new Image();
+powerUpImage.src = "power-up2.png"; 
+
+let player = { x: 50, y: 180, width: 40, height: 50 };      
+let bullets = [];
+let enemies = [];
+let enemyBullets = [];
+let explosions = [];
+let score = 0;
+let playerHealth = 100;  
+let gameOver = false; 
+
+
+let powerUp = null;
+let electricityUp = null;
+let electricityActive = false;
+let electricityFrames = 0;
+let missilesActive = false;
+let missiles = [];
+let missileAmmo = 0;
+let missileDuration = 50000; 
+
+
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'ArrowUp') player.y -= 20;
+  if(e.key === 'ArrowDown') player.y += 20;
+  if(e.key === ' ') bullets.push({ x: player.x + player.width, y: player.y + player.height/2, width:5, height:2 });
+});
+
+
+function spawnEnemy() {
+  enemies.push({ 
+    x: 400, 
+    y: Math.random() * (400 - 30), 
+    width:30, 
+    height:30,
+    maxHp: 30,
+    hp: 30,
+    speed: 0.5,
+    slowed: false,
+    slowTimer: 0
+  });
+}
+setInterval(spawnEnemy, 2000);
+
+function spawnPowerUps() {
+  if(!powerUp && score > 0 && score % 10 === 0 && score < 30) {
+    powerUp = { x: 200, y: Math.random()*300, width: 20, height: 20 };
+  }
+  if(!electricityUp && score >= 30) {
+    electricityUp = { x: 200, y: Math.random()*300, width: 25, height: 25 };
+  }
+}
+
+
+function update() {
+  spawnPowerUps();
+
+
+  bullets.forEach(b => b.x += 10);
+
+  enemies.forEach(e => {
+    if(e.slowTimer > 0){
+      e.slowTimer--;
+    } else {
+      e.slowed = false;
+      e.speed = 0.5;
+    }
+    e.x -= e.speed;
+  });
+
+  enemyBullets.forEach(b => b.x -= 2); 
+  enemyBullets = enemyBullets.filter(b => b.x > -20);
+
+
+  bullets.forEach((b, bi) => {
+    enemies.forEach((e, ei) => {
+      if(b.x < e.x + e.width && b.x + b.width > e.x &&
+        b.y < e.y + e.height && b.y + b.height > e.y) {
+          explosions.push({ x: e.x, y: e.y, size: 10, alpha: 1 });
+          bullets.splice(bi,1);
+
+          e.hp -= 25; // bullet damage
+
+          if(e.hp <= 0){
+            enemies.splice(ei,1);
+            score++;
+          }
+      }
+    });
+  });
+
+
+  if(powerUp){
+    bullets.forEach((b, bi) => {
+      if(b.x < powerUp.x + powerUp.width && b.x + b.width > powerUp.x &&
+         b.y < powerUp.y + powerUp.height && b.y + b.height > powerUp.y) {
+           bullets.splice(bi,1);
+           missilesActive = true;
+           missileAmmo = 50;
+           powerUp = null;
+           setTimeout(() => missilesActive = false, missileDuration);
+           score++;
+      }
+    });
+  }
+
+    if(electricityUp){
+    bullets.forEach((b, bi) => {
+        if(b.x < electricityUp.x + electricityUp.width && b.x + b.width > electricityUp.x &&
+        b.y < electricityUp.y + electricityUp.height && b.y + b.height > electricityUp.y) {
+            bullets.splice(bi,1);
+            electricityActive = true;
+            electricityFrames = 30000; 
+            electricityUp = null;
+            score++; 
+        }
+    });
+    }
+
+
+    if (electricityActive) {
+
+      enemies.forEach((enemy, index) => {
+
+        let startX = player.x + player.width / 2;
+        let startY = player.y + player.height / 2;
+
+        let endX = enemy.x + enemy.width / 2;
+        let endY = enemy.y + enemy.height / 2;
+
+
+        let dx = endX - startX;
+        let dy = endY - startY;
+        let distance = Math.sqrt(dx * dx + dy * dy);
+ 
+ 
+        if (distance <  500) {  
+          enemy.hp -= 0.1;   
+          enemy.slowed = true;
+          enemy.speed = 0.2;   
+          enemy.slowTimer = 10;
+
+          if(Math.random() < 0.2){
+            explosions.push({ x: enemy.x, y: enemy.y, size: 5, alpha: 1 });
+          }
+
+          if(enemy.hp <= 0){
+            explosions.push({ x: enemy.x, y: enemy.y, size: 20, alpha: 1 });
+            enemies.splice(index, 1);
+            score++;
+          }
+        }
+      });
+
+      electricityFrames--;
+      if (electricityFrames <= 0) electricityActive = false;
+    }
+
+
+  if(missilesActive && enemies.length > 0 && missileAmmo > 0) {
+    if(Math.random() < 0.05) {
+      let target = enemies[Math.floor(Math.random()*enemies.length)];
+      missiles.push({
+        x: player.x + player.width,
+        y: player.y + player.height/2,
+        width: 20,
+        height: 10,
+        target
+      });
+      missileAmmo--;
+    }
+  }
+
+
+  missiles.forEach((m, mi) => {
+    if(m.target){
+      let dx = m.target.x - m.x;
+      let dy = m.target.y - m.y;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+      let speed = 5;
+      m.x += speed * dx / dist;
+      m.y += speed * dy / dist;
+
+      if(m.x < m.target.x + m.target.width && m.x + m.width > m.target.x &&
+        m.y < m.target.y + m.target.height && m.y + m.height > m.target.y) {
+          explosions.push({ x: m.target.x, y: m.target.y, size: 10, alpha: 1 });
+
+          m.target.hp -= 20; 
+          if(m.target.hp <= 0){
+            enemies = enemies.filter(e => e !== m.target);
+            score++;
+          }
+
+          missiles.splice(mi,1);
+      }
+    }
+  });
+
+
+  bullets = bullets.filter(b => b.x < 400);
+  enemies = enemies.filter(e => e.x > -20);
+
+  explosions.forEach((ex, index) => {
+    ex.size += 2;
+    ex.alpha -= 0.05;
+    if(ex.alpha <= 0) explosions.splice(index,1);
+  });
+
+  enemies.forEach(e => {
+    if(Math.random() < 0.01) { 
+      enemyBullets.push({ x: e.x, y: e.y + e.height/2 - 5, width: 10, height: 5 });
+    }
+  });
+
+
+  enemyBullets.forEach((b, bi) => {
+    if(b.x < player.x + player.width && b.x + b.width > player.x &&
+       b.y < player.y + player.height && b.y + b.height > player.y) {
+         enemyBullets.splice(bi,1);
+         playerHealth -= 10;
+         if(playerHealth <= 0){ playerHealth = 0; gameOver = true; }
+    }
+  });
+
+
+  // if(electricityFrames > 0) electricityFrames--;
+  // else electricityActive = false;
+}
+
+
+function draw() {
+  ctx.clearRect(0,0,400,400);
+
+  ctx.fillStyle = 'red'; ctx.fillRect(10,30,100,10);
+  ctx.fillStyle = 'lime'; ctx.fillRect(10,30,playerHealth,10);
+  ctx.strokeStyle = 'white'; ctx.strokeRect(10,30,100,10);
+
+
+  ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+
+  ctx.fillStyle = 'yellow';
+  bullets.forEach(b => ctx.fillRect(b.x,b.y,b.width,b.height));
+
+
+  enemies.forEach(e => {
+    ctx.drawImage(enemyImage, e.x, e.y, e.width, e.height);
+    ctx.fillStyle = "red";
+    ctx.fillRect(e.x, e.y - 8, e.width, 4);
+    ctx.fillStyle = "lime";
+    ctx.fillRect(e.x, e.y - 8, e.width * (e.hp / e.maxHp), 4);
+  });
+
+  ctx.fillStyle = 'orange';
+  enemyBullets.forEach(b => ctx.fillRect(b.x,b.y,b.width,b.height));
+
+
+  if(powerUp) ctx.drawImage(powerUpImage, powerUp.x, powerUp.y, powerUp.width, powerUp.height);
+  if(electricityUp){
+    ctx.strokeStyle = 'cyan';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(electricityUp.x, electricityUp.y);
+    ctx.lineTo(electricityUp.x + 20, electricityUp.y + 20);
+    ctx.stroke();
+  }
+
+
+  missiles.forEach(m => ctx.drawImage(missileImage, m.x, m.y, m.width, m.height));
+
+  explosions.forEach(ex => {
+    ctx.beginPath();
+    ctx.arc(ex.x + 10, ex.y + 10, ex.size, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(255, 100, 0, ${ex.alpha})`;
+    ctx.fill();
+  });
+
+
+  if(electricityActive){
+    ctx.strokeStyle = 'cyan';
+    ctx.lineWidth = 2;
+    enemies.forEach(e => {
+      let startX = player.x + player.width/2;
+      let startY = player.y + player.height/2;
+      let endX = e.x + e.width/2;
+      let endY = e.y + e.height/2;
+      let segments = 5;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      for(let i=1; i<=segments; i++){
+        let x = startX + (endX-startX)/segments*i + (Math.random()*10-5);
+        let y = startY + (endY-startY)/segments*i + (Math.random()*10-5);
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    });
+  }
+
+  ctx.fillStyle = 'white';
+  ctx.fillText('Score: ' + score, 10, 20);
+}
+
+
+function drawGameOver() {
+  ctx.clearRect(0,0,400,400);
+  ctx.fillStyle = 'white';
+  ctx.font = '30px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2);
+  ctx.font = '20px Arial';
+  ctx.fillText('Score: ' + score, canvas.width/2, canvas.height/2 + 40);
+  restartBtn.style.display = 'block';
+}
+
+
+function loop() {
+  if(!gameOver){ update(); draw(); requestAnimationFrame(loop); } 
+  else { drawGameOver(); }
+} 
+
+loop();
+
+const restartBtn = document.getElementById('restartBtn');
+restartBtn.addEventListener('click', () => {
+  player.x = 50; player.y = 180; bullets = []; enemies = []; enemyBullets = [];
+  explosions = []; score = 0; playerHealth = 100; gameOver = false;
+  powerUp = null; electricityUp = null; electricityActive = false;
+  missilesActive = false; missiles = []; missileAmmo = 0;
+  restartBtn.style.display = 'none';
+  loop();
+});
+
+</script>
+</body>
+</html>

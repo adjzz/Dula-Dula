@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Running Character Game</title>
+  <style>
+    canvas { 
+      background: #87CEEB; /* sky blue */
+      display: block;
+      margin: 0 auto;
+      border: 2px solid black;
+    }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="600" height="400"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Load character image (you can replace with sprite sheet)
+const charImage = new Image();
+charImage.src = "alien_Fire2.png"; // your character PNG
+
+// Ground settings
+const groundY = 350;
+
+// Player variables
+let player = {
+  x: 50,
+  y: groundY - 50,
+  width: 40,
+  height: 50,
+  vx: 0,
+  vy: 0,
+  speed: 3,
+  jumping: false,
+  gravity: 0.8,
+  jumpStrength: 15
+};
+
+// Key press state
+let keys = {};
+
+// Event listeners
+document.addEventListener('keydown', e => keys[e.key] = true);
+document.addEventListener('keyup', e => keys[e.key] = false);
+
+// Game loop
+function update() {
+  // Left/right movement
+  if(keys['ArrowRight']) player.vx = player.speed;
+  else if(keys['ArrowLeft']) player.vx = -player.speed;
+  else player.vx = 0;
+
+  // Jump
+  if(keys[' '] && !player.jumping) {
+    player.vy = -player.jumpStrength;
+    player.jumping = true;
+  }
+
+  // Apply gravity
+  player.vy += player.gravity;
+
+  // Update position
+  player.x += player.vx;
+  player.y += player.vy;
+
+  // Ground collision
+  if(player.y + player.height > groundY) {
+    player.y = groundY - player.height;
+    player.vy = 0;
+    player.jumping = false;
+  }
+
+  // Prevent leaving canvas
+  if(player.x < 0) player.x = 0;
+  if(player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+}
+
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Draw ground
+  ctx.fillStyle = 'green';
+  ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+
+  // Draw player
+  ctx.drawImage(charImage, player.x, player.y, player.width, player.height);
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
