@@ -3,17 +3,68 @@
 <head>
   <title>Space Impact Clone with Power-Ups</title>
   <style>
-    canvas { background: black; display: block; margin: 0 auto; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+      touch-action: none; 
+    }
+
+    canvas {
+      display: block;
+    }
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+    #controls > div, #controls > button {
+      pointer-events: auto;
+    }
+    #restartBtn {
+      position: absolute;
+      left: 50%;
+      top: 60%;
+      transform: translateX(-50%);
+      padding: 12px 25px;
+      font-size: 18px;
+      z-index: 10;
+    }
   </style>
 </head>
 <body>
+
+<!-- <div id="controls">
+  <div style="display:flex; flex-direction:column; margin-left:10px;">
+    <button id="upBtn" style="width:60px; height:60px; margin-bottom:10px;">▲</button>
+    <button id="downBtn" style="width:60px; height:60px;">▼</button>
+  </div>
+  <button id="fireBtn" style="width:80px; height:80px; margin-right:10px;">⚡</button>
+</div> -->
+
+  
 <button id="restartBtn" style="display:none; position: absolute; left:50%; top:60%; transform: translateX(-50%); padding:10px 20px; font-size:16px;">
   Restart
 </button>
-<canvas id="gameCanvas" width="400" height="400"></canvas>
+<canvas id="gameCanvas"></canvas>
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+
+const baseWidth = 400;
+const baseHeight = 400;
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
 const playerImage = new Image();
 playerImage.src = "alien_Fire2.png"; 
@@ -44,6 +95,11 @@ let missileAmmo = 0;
 let missileDuration = 50000; 
 
 
+let upPressed = false;
+let downPressed = false;
+let firePressed = false;
+
+
 document.addEventListener('keydown', (e) => {
   if(e.key === 'ArrowUp') player.y -= 20;
   if(e.key === 'ArrowDown') player.y += 20;
@@ -53,8 +109,8 @@ document.addEventListener('keydown', (e) => {
 
 function spawnEnemy() {
   enemies.push({ 
-    x: 400, 
-    y: Math.random() * (400 - 30), 
+    x: baseWidth, 
+    y: Math.random() * (baseHeight - 30),
     width:30, 
     height:30,
     maxHp: 30,
@@ -64,7 +120,7 @@ function spawnEnemy() {
     slowTimer: 0
   });
 }
-setInterval(spawnEnemy, 2000);
+setInterval(spawnEnemy, 3000);
 
 function spawnPowerUps() {
   if(!powerUp && score > 0 && score % 10 === 0 && score < 30) {
@@ -221,7 +277,7 @@ function update() {
   });
 
 
-  bullets = bullets.filter(b => b.x < 400);
+  bullets = bullets.filter(b => b.x < baseWidth);
   enemies = enemies.filter(e => e.x > -20);
 
   explosions.forEach((ex, index) => {
@@ -253,7 +309,11 @@ function update() {
 
 
 function draw() {
-  ctx.clearRect(0,0,400,400);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  let scaleX = canvas.width / baseWidth;
+  let scaleY = canvas.height / baseHeight;
+  ctx.save();
+  ctx.scale(scaleX, scaleY);
 
   ctx.fillStyle = 'red'; ctx.fillRect(10,30,100,10);
   ctx.fillStyle = 'lime'; ctx.fillRect(10,30,playerHealth,10);
@@ -321,6 +381,8 @@ function draw() {
 
   ctx.fillStyle = 'white';
   ctx.fillText('Score: ' + score, 10, 20);
+
+  ctx.restore();
 }
 
 
