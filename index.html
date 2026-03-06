@@ -138,6 +138,9 @@ const explosionSound = new Audio('explosion.mp3');
 const powerupSound = new Audio('powerUP.mp3');
 const electricitySound = new Audio('electric.mp3');
 const missileSound = new Audio('missiles.mp3');
+const bgMusic = new Audio('space_BG.mp3');
+bgMusic.loop = true;
+bgMusic.volume = 0.3;
 
 shootSound.volume = 0.5;
 explosionSound.volume = 0.6;
@@ -197,6 +200,11 @@ const bulletDelay = 10;
 let energyBursts = [];
 
 document.addEventListener('keydown', (e) => {
+
+  if (bgMusic.paused) {
+    bgMusic.play();
+  }
+
   if(e.key === 'ArrowUp') upPressed = true;
   if(e.key === 'ArrowDown') downPressed = true;
   if(e.key === ' ') firePressed = true;
@@ -570,6 +578,7 @@ const finalScoreText = document.getElementById('finalScore');
 function drawGameOver() {
   gameOverOverlay.style.display = 'flex';
   finalScoreText.textContent = 'Score: ' + score;
+  bgMusic.pause();
 }
 
 
@@ -599,6 +608,11 @@ const fireBtnMobile = document.getElementById('fireBtnMobile');
 function addTouchControls(button, onPress, onRelease) {
   button.addEventListener('touchstart', (e) => {
     e.preventDefault();
+
+    if (bgMusic.paused) {
+      bgMusic.play();
+    }
+
     onPress();
   }, { passive: false });
 
